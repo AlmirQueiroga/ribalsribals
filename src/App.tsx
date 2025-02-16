@@ -1,26 +1,79 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useContext, useState } from 'react';
+import { GameContext, GameProvider } from './context/Context';
+import { AddHeroiForm } from './components/HeroPage';
+import { HeroiList } from './components/HeroiList';
+import { Container, Header, Title, Button, Tabs, TabButton, TabContent } from './styles';
+import { AddFormacaoForm } from './components/AddFormacaoForm';
+import { AddGameModeForm } from './components/AddGameModeForm';
+import { AddMapaForm } from './components/AddMapaForm';
+import { ContextDisplay } from './components/ContextDisplay';
 
-function App() {
+const App: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'hero' | 'gameMode' | 'mapa' | 'form'>('hero');
+  const { saveToJson, loadFromJson } = useContext(GameContext);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
+    <Container>
+      <Header>
+        <Title>Ribals Ribals</Title>
+        <div>
+          <Button onClick={saveToJson}>Salvar JSON</Button>
+          <Button onClick={loadFromJson}>Carregar JSON</Button>
+        </div>
+      </Header>
+      <Tabs>
+        <TabButton
+          active={activeTab === 'hero'}
+          onClick={() => setActiveTab('hero')}
         >
-          Learn React
-        </a>
-      </header>
-    </div>
+          Add Heroi
+        </TabButton>
+        <TabButton
+          active={activeTab === 'gameMode'}
+          onClick={() => setActiveTab('gameMode')}
+        >
+          Add GameMode
+        </TabButton>
+        <TabButton
+          active={activeTab === 'mapa'}
+          onClick={() => setActiveTab('mapa')}
+        >
+          Add Mapa
+        </TabButton>
+        <TabButton
+          active={activeTab === 'form'}
+          onClick={() => setActiveTab('form')}
+        >
+          Add Formação
+        </TabButton>
+      </Tabs>
+      <TabContent>
+        {activeTab === 'hero' && (
+          <>
+            <AddHeroiForm />
+            <HeroiList />
+          </>
+        )}
+        {activeTab === 'gameMode' && (
+          <>
+            <AddGameModeForm />
+          </>
+        )}
+        {activeTab === 'mapa' && (
+          <>
+            <AddMapaForm />
+          </>
+        )}
+        {activeTab === 'form' && (
+          <>
+            <AddFormacaoForm />
+          </>
+        )}
+      </TabContent>
+      <ContextDisplay />
+    </Container>
   );
-}
+};
+    
 
 export default App;
