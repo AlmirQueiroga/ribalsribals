@@ -16,6 +16,22 @@ export const SelectButton = styled.button`
   text-align: left;
 `;
 
+export const GameStatusTable = styled.table`
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #000;
+  border-radius: 4px;
+  background-color: white;
+
+  tr {
+    margin: 4rem;
+    width: 100%;
+    td{
+      text-align: center;
+    }
+  }
+`;
+
 export const OptionsList = styled.ul`
   position: absolute;
   top: 100%;
@@ -46,6 +62,7 @@ export const SelectedItemsContainer = styled.div`
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 8px;
+  max-width: 20rem;
 `;
 
 export const SelectedItem = styled.div`
@@ -63,12 +80,13 @@ export const SelectMulti = styled.select`
   padding: 4px 8px;
   background-color: #e0e0e0;
   border-radius: 4px;
-  width: 11%;
+  width: 100%;
+  height: 15rem;
   font-size: 14px;
 `;
 
 export const FilterInput = styled.input`
-  width: 10%;
+  width: 95%;
   padding: 8px;
   margin-bottom: 8px;
   border: 1px solid #ccc;

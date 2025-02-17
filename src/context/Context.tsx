@@ -13,6 +13,7 @@ const defaultState: AppContextType = {
 export const GameContext = createContext<{
   state: AppContextType;
   addHeroi: (heroi: Heroi) => void;
+  editHeroi: (heroi: Heroi) => void;
   addMapa: (mapa: Mapa) => void;
   addTipoJogo: (tipo: string) => void;
   addFormacao: (formacao: string) => void;
@@ -21,6 +22,7 @@ export const GameContext = createContext<{
 }>({
   state: defaultState,
   addHeroi: () => {},
+  editHeroi: () => {},
   addMapa: () => {},
   addTipoJogo: () => {},
   addFormacao: () => {},
@@ -28,11 +30,10 @@ export const GameContext = createContext<{
   loadFromJson: () => {},
 });
 
-// Provider do contexto
+
 export const GameProvider = ({ children }: { children: ReactNode }) => {
   const [state, setState] = useState<AppContextType>(defaultState);
 
-  // Função para adicionar um herói
   const addHeroi = (heroi: Heroi) => {
     setState((prevState) => ({
       ...prevState,
@@ -40,7 +41,15 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
-  // Função para adicionar um mapa
+  const editHeroi = (updatedHeroi: Heroi) => {
+    setState((prevState) => ({
+      ...prevState,
+      herois: prevState.herois.map((heroi) =>
+        heroi.nome === updatedHeroi.nome ? updatedHeroi : heroi
+      ),
+    }));
+  };
+
   const addMapa = (mapa: Mapa) => {
     setState((prevState) => ({
       ...prevState,
@@ -48,7 +57,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
-  // Função para adicionar um tipo de jogo
   const addTipoJogo = (tipo: string) => {
     setState((prevState) => ({
       ...prevState,
@@ -56,7 +64,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
-  // Função para adicionar uma formação
   const addFormacao = (formacao: string) => {
     setState((prevState) => ({
       ...prevState,
@@ -64,7 +71,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
-  // Função para salvar o estado em um arquivo JSON
   const saveToJson = () => {
     const json = JSON.stringify(state, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
@@ -76,7 +82,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     URL.revokeObjectURL(url);
   };
 
-  // Função para carregar o estado de um arquivo JSON
   const loadFromJson = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -101,6 +106,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       value={{
         state,
         addHeroi,
+        editHeroi,
         addMapa,
         addTipoJogo,
         addFormacao,

@@ -1,16 +1,24 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect, useRef } from 'react';
 import { GameContext } from '../../context/Context';
 import { Heroi, Classe, GameStatusPlus, GameStatusDown, Mapa } from '../../types/types';
-import { SelectContainer, SelectButton, OptionsList, OptionItem, SelectedItemsContainer, SelectedItem, RemoveButton, SelectMulti, FilterInput, AddButton } from './style';
+import { SelectContainer, SelectButton, OptionsList, OptionItem, SelectedItemsContainer, SelectedItem, RemoveButton, SelectMulti, FilterInput, AddButton, GameStatusTable } from './style';
 
-export const AddHeroiForm: React.FC = () => {
-  const { state, addHeroi } = useContext(GameContext);
+interface AddHeroiFormProps {
+  heroiToEdit?: Heroi;
+  setHeroEdit?: React.Dispatch<React.SetStateAction<Heroi | undefined>>
+}
+
+export const AddHeroiForm: React.FC<AddHeroiFormProps> = ({ heroiToEdit, setHeroEdit }) => {
+  const { state, addHeroi, editHeroi } = useContext(GameContext);
+  const [isEditing, setIsEditing] = useState(!!heroiToEdit);
+  const [editingGoodMap, setEditingGoodMap] = useState<number | undefined>(undefined);
+  const [editingBadMap, setEditingBadMap] = useState<number | undefined>(undefined);
   const [nome, setNome] = useState('');
   const [classe, setClasse] = useState<Classe>(Classe.Tank);
   const [counters, setCounters] = useState<Heroi[]>([]);
-  const [countera, setCountera] = useState<Heroi[]>([]);
+  const [countered, setCountered] = useState<Heroi[]>([]);
   const [counterFilter, setCounterFilter] = useState('');
-  const [counteraFilter, setCounteraFilter] = useState('');
+  const [counteredFilter, setCounteredFilter] = useState('');
   const [goodMaps, setGoodMaps] = useState<GameStatusPlus[]>([]);
   const [tipoGoods, setTipoGoods] = useState<string>();
   const [mapaGoods, setMapaGoods] = useState<Mapa>();
@@ -31,8 +39,25 @@ export const AddHeroiForm: React.FC = () => {
   const [aliadoPBadFilter, setAliadoPBadFilter] = useState<string>('');
   const [aliadoOBad, setAliadoOBad] = useState<Heroi[]>([]);
   const [aliadoOBadFilter, setAliadoOBadFilter] = useState<string>('');
-  const [counterBad, setCounterBad] = useState<Heroi[]>([]);
+  const [counteredBad, setCounteredBad] = useState<Heroi[]>([]);
   const [counteredBadFilter, setCounteredBadFilter] = useState<string>('');
+
+  useEffect(() => {
+    if (heroiToEdit) {
+      setNome(heroiToEdit.nome);
+      setClasse(heroiToEdit.classe);
+      setCounters(heroiToEdit.counters || []);
+      setCountered(heroiToEdit.countered || []);
+      setGoodMaps(heroiToEdit.goodMaps || []);
+      setBadMaps(heroiToEdit.badMaps || []);
+      setIsEditing(true);
+
+      if(ref.current) ref.current.focus();
+    }
+  }, [heroiToEdit]);
+
+  const ref = useRef<HTMLInputElement>(null);
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,24 +66,63 @@ export const AddHeroiForm: React.FC = () => {
       nome,
       classe,
       ...(counters && { counters: counters }),
-      ...(countera && { countera: countera }),
+      ...(countered && { countered: countered }),
       ...(goodMaps && { goodMaps: goodMaps }),
       ...(badMaps && { badMaps: badMaps }),
       // counters: counters.length > 0 ? counters : undefined,
       // countera: countera.length > 0 ? countera : undefined,
     };
 
-    addHeroi(newHeroi);
+    if(isEditing){
+      editHeroi(newHeroi);
+    } else {
+      addHeroi(newHeroi);
+    }
     resetForm();
   };
+
+  const handleCancelEdit = () => {
+    setHeroEdit && setHeroEdit(undefined);
+    resetForm();
+  }
 
   const resetForm = () => {
     setNome('');
     setClasse(Classe.Tank);
     setCounters([]);
-    setCountera([]);
+    setCountered([]);
     setCounterFilter('');
-    setCounteraFilter('');
+    setCounteredFilter('');
+    setGoodMaps([]);
+    resetGoodMapsForm();
+    setBadMaps([]);
+    resetBadMapsForm();
+  };
+
+  const resetGoodMapsForm = () => {
+    setTipoGoods('')
+    setMapaGoods(undefined);
+    setPosGoods('')
+    setSubGoods('')
+    setAliadoPGoods([]);
+    setAliadoPGoodsFilter('');
+    setAliadoOGoods([]);
+    setAliadoOGoodsFilter('');
+    setCounterGoods([]);
+    setCounterGoodsFilter('');
+  };
+
+  const resetBadMapsForm = () => {
+    setTipoBad('');
+    setMapaBad(undefined);
+    setPosBad('');
+    setSubBad('');
+    setAliadoPBad([]);
+    setAliadoOBadFilter('');
+    setAliadoOBad([]);
+    setAliadoOBadFilter('');
+    setCounteredBad([]);
+    setCounteredBadFilter('');
   };
 
   const handleAddGoodMaps = () => {
@@ -75,11 +139,8 @@ export const AddHeroiForm: React.FC = () => {
     }
 
     setGoodMaps((prev) => (prev.concat(gameStatus)))
-    setPosGoods('')
-    setSubGoods('')
-    setAliadoPGoods([])
-    setAliadoOGoods([])
-    setCounterGoods([])
+
+    resetGoodMapsForm();
   }
 
   const handleAddBadMaps = () => {
@@ -90,81 +151,146 @@ export const AddHeroiForm: React.FC = () => {
       mapa: mapaBad,
       ...(posBad && { posicao: posBad }),
       ...(subBad && { submapa: subBad }),
-      ...(aliadoPBad && { aliadoPlus: aliadoPBad }),
-      ...(aliadoOBad && { aliadoOb: aliadoOBad }),
-      ...(counterBad && { specifCountered: counterBad }),
+      ...(aliadoPBad && { aliadoDown: aliadoPBad }),
+      ...(aliadoOBad && { aliadoObDown: aliadoOBad }),
+      ...(counteredBad && { specifCountered: counteredBad }),
     }
 
     setBadMaps((prev) => (prev.concat(gameStatus)))
-    setPosBad('')
-    setSubBad('')
-    setAliadoPBad([])
-    setAliadoOBad([])
-    setCounterBad([])
+
+    resetBadMapsForm();
   }
 
   const handleCounterSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedOptions = Array.from(e.target.selectedOptions).map(
       (option) => state.herois.find((h) => h.nome === option.value)!
-    );
+    ).filter((heroi) => !counters.some((h) => h.nome === heroi.nome));;
+    
     setCounters((prev) => (selectedOptions.concat(prev)));
   };
 
-  const handleCounteraSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleCounteredSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedOptions = Array.from(e.target.selectedOptions).map(
       (option) => state.herois.find((h) => h.nome === option.value)!
-    );
-    setCountera((prev) => (selectedOptions.concat(prev)));
+    ).filter((heroi) => !countered.some((h) => h.nome === heroi.nome));;
+    
+    setCountered((prev) => (selectedOptions.concat(prev)));
   };
 
   const handleGoodAllySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedOptions = Array.from(e.target.selectedOptions).map(
       (option) => state.herois.find((h) => h.nome === option.value)!
-    );
+    ).filter((heroi) => !aliadoPGoods.some((h) => h.nome === heroi.nome));;
+    
     setAliadoPGoods((prev) => (selectedOptions.concat(prev)));
   };
 
   const handleObrigatorAllySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedOptions = Array.from(e.target.selectedOptions).map(
       (option) => state.herois.find((h) => h.nome === option.value)!
-    );
+    ).filter((heroi) => !aliadoOGoods.some((h) => h.nome === heroi.nome));;
+  
     setAliadoOGoods((prev) => (selectedOptions.concat(prev)));
   };
 
   const handleGoodCounterSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedOptions = Array.from(e.target.selectedOptions).map(
       (option) => state.herois.find((h) => h.nome === option.value)!
-    );
+    ).filter((heroi) => !counterGoods.some((h) => h.nome === heroi.nome));;
+
     setCounterGoods((prev) => (selectedOptions.concat(prev)));
   };
 
   const handleBadAllySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedOptions = Array.from(e.target.selectedOptions).map(
       (option) => state.herois.find((h) => h.nome === option.value)!
-    );
+    ).filter((heroi) => !aliadoPBad.some((h) => h.nome === heroi.nome));
+
     setAliadoPBad((prev) => (selectedOptions.concat(prev)));
   };
 
   const handleObrigatorBadAllySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedOptions = Array.from(e.target.selectedOptions).map(
       (option) => state.herois.find((h) => h.nome === option.value)!
-    );
+    ).filter((heroi) => !aliadoOBad.some((h) => h.nome === heroi.nome));
+    
     setAliadoOBad((prev) => (selectedOptions.concat(prev)));
   };
 
   const handleBadCounteredSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedOptions = Array.from(e.target.selectedOptions).map(
       (option) => state.herois.find((h) => h.nome === option.value)!
-    );
-    setCounterBad((prev) => (selectedOptions.concat(prev)));
+    ).filter((heroi) => !counteredBad.some((h) => h.nome === heroi.nome));
+
+    setCounteredBad((prev) => (selectedOptions.concat(prev)));
+  };
+
+  const handleEditGoodMap = (index: number, goodMap: GameStatusPlus) => {
+    setEditingGoodMap(index)
+
+    setTipoGoods(goodMap.tipo);
+    setMapaGoods(goodMap.mapa);
+    setPosGoods(goodMap.posicao || '');
+    setSubGoods(goodMap.submapa || '');
+    setAliadoPGoods(goodMap.aliadoPlus || []);
+    setAliadoOGoods(goodMap.aliadoOb || []);
+    setCounterGoods(goodMap.specifCounter || []);
+  }
+
+  const handleEditBadMap = (index: number, badMap: GameStatusDown) => {
+    setEditingBadMap(index)
+
+    setTipoBad(badMap.tipo);
+    setMapaBad(badMap.mapa);
+    setPosBad(badMap.posicao || '');
+    setSubBad(badMap.submapa || '');
+    setAliadoPBad(badMap.aliadoDown || []);
+    setAliadoOBad(badMap.aliadoObDown || []);
+    setCounteredBad(badMap.specifCountered || []);
+  }
+
+  const handleCancelEditGoodMaps = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    setEditingGoodMap(undefined);
+    resetGoodMapsForm();
+  };
+
+  const handleCancelEditBadMaps = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    setEditingBadMap(undefined);
+    resetBadMapsForm();
+  };
+
+  const handleSubmitGoodMapsEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if(editingGoodMap == undefined) return
+    handleAddGoodMaps();
+
+    const row = goodMaps;
+    row.splice(editingGoodMap, 1);
+    setEditingGoodMap(undefined);
+    setGoodMaps(row);
+  };
+
+  const handleSubmitBadMapsEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if(editingBadMap == undefined) return
+    handleAddBadMaps();
+    
+    const row = badMaps;
+    row.splice(editingBadMap, 1);
+    setEditingBadMap(undefined);
+    setBadMaps(row);
   };
 
   const removeCounter = (heroi: Heroi) => {
     setCounters(counters.filter((h) => h.nome !== heroi.nome));
   };
 
-  const removeCountera = (heroi: Heroi) => {
-    setCountera(countera.filter((h) => h.nome !== heroi.nome));
+  const removeCountered = (heroi: Heroi) => {
+    setCountered(countered.filter((h) => h.nome !== heroi.nome));
   };
 
   const removeGoodAlly = (heroi: Heroi) => {
@@ -188,15 +314,15 @@ export const AddHeroiForm: React.FC = () => {
   };
 
   const removeSpecfCountered = (heroi: Heroi) => {
-    setCounterBad(counterBad.filter((h) => h.nome !== heroi.nome));
+    setCounteredBad(counteredBad.filter((h) => h.nome !== heroi.nome));
   };
 
   const filteredCounters = state.herois.filter((heroi) =>
     heroi.nome.toLowerCase().includes(counterFilter.toLowerCase())
   );
 
-  const filteredCountera = state.herois.filter((heroi) =>
-    heroi.nome.toLowerCase().includes(counteraFilter.toLowerCase())
+  const filteredCountered = state.herois.filter((heroi) =>
+    heroi.nome.toLowerCase().includes(counteredFilter.toLowerCase())
   );
 
   const filteredGoodAllys = state.herois.filter((heroi) =>
@@ -232,6 +358,7 @@ export const AddHeroiForm: React.FC = () => {
             type="text"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
+            ref={ref}
             required
           />
         </label>
@@ -252,70 +379,72 @@ export const AddHeroiForm: React.FC = () => {
           </select>
         </label>
       </div>
-      <div>
-        <h3>Counters (Heróis que o counteram):</h3>
-        <FilterInput
-          type="text"
-          value={counterFilter}
-          onChange={(e) => setCounterFilter(e.target.value)}
-          placeholder="Hero"
-        />
-        <SelectMulti
-          multiple
-          value={counters.map((counter) => counter.nome)}
-          onChange={handleCounterSelect}
-        >
-          {filteredCounters.map((heroi) => (
-            <option key={heroi.nome} value={heroi.nome}>
-              {heroi.nome}
-            </option>
-          ))}
-        </SelectMulti>
-        <SelectedItemsContainer>
-          {counters.map((heroi) => (
-            <SelectedItem key={heroi.nome}>
-              {heroi.nome}
-              <RemoveButton type="button" onClick={() => removeCounter(heroi)}>
-                X
-              </RemoveButton>
-            </SelectedItem>
-          ))}
-        </SelectedItemsContainer>
-      </div>
-      <div>
-        <h3>Countera (Heróis que ele countera):</h3>
-        <FilterInput
-          type="text"
-          value={counteraFilter}
-          onChange={(e) => setCounteraFilter(e.target.value)}
-          placeholder="Hero"
-        />
-        <SelectMulti
-          multiple
-          value={countera.map((counter) => counter.nome)}
-          onChange={handleCounteraSelect}
-        >
-          {filteredCountera.map((heroi) => (
-            <option key={heroi.nome} value={heroi.nome}>
-              {heroi.nome}
-            </option>
-          ))}
-        </SelectMulti>
-        <SelectedItemsContainer>
-          {countera.map((heroi) => (
-            <SelectedItem key={heroi.nome}>
-              {heroi.nome}
-              <RemoveButton type="button" onClick={() => removeCountera(heroi)}>
-                X
-              </RemoveButton>
-            </SelectedItem>
-          ))}
-        </SelectedItemsContainer>
+      <div style={{display:"flex", flexDirection:"row", justifyContent:"space-evenly"}}>
+        <div style={{minWidth: "20rem"}} >
+          <h3>Counter de:</h3>
+          <FilterInput
+            type="text"
+            value={counterFilter}
+            onChange={(e) => setCounterFilter(e.target.value)}
+            placeholder="Hero"
+          />
+          <SelectMulti
+            multiple
+            value={counters.map((counter) => counter.nome)}
+            onChange={handleCounterSelect}
+          >
+            {filteredCounters.map((heroi) => (
+              <option key={heroi.nome} value={heroi.nome}>
+                {heroi.nome}
+              </option>
+            ))}
+          </SelectMulti>
+          <SelectedItemsContainer>
+            {counters.map((heroi) => (
+              <SelectedItem key={heroi.nome}>
+                {heroi.nome}
+                <RemoveButton type="button" onClick={() => removeCounter(heroi)}>
+                  X
+                </RemoveButton>
+              </SelectedItem>
+            ))}
+          </SelectedItemsContainer>
+        </div>
+        <div style={{minWidth: "20rem"}}>
+          <h3>Counterado por:</h3>
+          <FilterInput
+            type="text"
+            value={counteredFilter}
+            onChange={(e) => setCounteredFilter(e.target.value)}
+            placeholder="Hero"
+          />
+          <SelectMulti
+            multiple
+            value={countered.map((counter) => counter.nome)}
+            onChange={handleCounteredSelect}
+          >
+            {filteredCountered.map((heroi) => (
+              <option key={heroi.nome} value={heroi.nome}>
+                {heroi.nome}
+              </option>
+            ))}
+          </SelectMulti>
+          <SelectedItemsContainer>
+            {countered.map((heroi) => (
+              <SelectedItem key={heroi.nome}>
+                {heroi.nome}
+                <RemoveButton type="button" onClick={() => removeCountered(heroi)}>
+                  X
+                </RemoveButton>
+              </SelectedItem>
+            ))}
+          </SelectedItemsContainer>
+        </div>
       </div>
       <div>
           <h3>Bons Mapas</h3>
-          {goodMaps && 
-            <table>
+          {goodMaps.length > 0 && 
+            <GameStatusTable>
               <thead> 
                 <tr>
                   <th>
@@ -339,82 +468,86 @@ export const AddHeroiForm: React.FC = () => {
                   <th>
                     counter especifico
                   </th>
+                  <th>
+                    editar
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  {goodMaps.map((gm) => (
-                    <>
+                {goodMaps.map((gm, i) => (
+                  <tr>
+                    <td>
+                      {gm.tipo}
+                    </td>
+                    <td>
+                      {gm.mapa.nome}
+                    </td>
+                    {gm.submapa ? 
                       <td>
-                        {gm.tipo}
+                        {gm.submapa}
                       </td>
+                      :
+                      <td>---</td>  
+                    }
+                    {gm.posicao ? 
                       <td>
-                        {gm.mapa.nome}
+                        {gm.posicao}
                       </td>
-                      {gm.submapa ? 
-                        <td>
-                          {gm.submapa}
-                        </td>
-                        :
-                        <td/>  
-                      }
-                      {gm.posicao ? 
-                        <td>
-                          {gm.posicao}
-                        </td>
-                        :
-                        <td/>
-                      }
-                      {gm.aliadoPlus ? 
-                        <td>
-                          <div style={{overflow:"scroll", maxHeight: "5rem"}}>
-                            {gm.aliadoPlus.map((al) => (
-                              <p>
+                      :
+                      <td>---</td>
+                    }
+                    {gm.aliadoPlus ? 
+                      <td>
+                        <div style={{overflowY:"scroll", maxHeight: "5rem"}}>
+                          {gm.aliadoPlus.map((al) => (
+                            <p>
 
-                                {al.nome}
-                              </p>
-                            ))}
-                          </div>
-                        </td>
-                        :
-                        <td/>
-                      }
-                      {gm.aliadoOb ? 
-                        <td>
-                          <div style={{overflow:"scroll", maxHeight: "5rem"}}>
-                          {gm.aliadoOb.map((al) => (
+                              {al.nome}
+                            </p>
+                          ))}
+                        </div>
+                      </td>
+                      :
+                      <td>---</td>
+                    }
+                    {gm.aliadoOb ? 
+                      <td>
+                        <div style={{overflowY:"scroll", maxHeight: "5rem"}}>
+                        {gm.aliadoOb.map((al) => (
+                          <p>
+                            {al.nome}
+                          </p>
+                        ))}
+                        </div>
+                      </td>
+                      :
+                      <td>---</td>
+                    }
+                    {gm.specifCounter ? 
+                      <td>
+                        <div style={{overflowY:"scroll", maxHeight: "5rem"}}>
+                          {gm.specifCounter.map((al, i) => (
                             <p>
                               {al.nome}
                             </p>
                           ))}
-                          </div>
-                        </td>
-                        :
-                        <td/>
-                      }
-                      {gm.specifCounter ? 
-                        <td>
-                          <div style={{overflow:"scroll", maxHeight: "5rem"}}>
-                            {gm.specifCounter.map((al) => (
-                              <p>
-                                {al.nome}
-                              </p>
-                            ))}
-                          </div>
-                        </td>
-                        :
-                        <td/>
-                      }
-                    </>
-                  ))}
-                </tr>
+                        </div>
+                      </td>
+                      :
+                      <td>---</td>
+                    }
+                    <td>
+                      <button type="button" onClick={() => handleEditGoodMap(i, gm)}>Editar</button>
+                    </td>
+                  </tr>
+                ))}                
               </tbody>
-            </table>
+            </GameStatusTable>
           }
           <select
             value={tipoGoods}
             onChange={(e) => {setTipoGoods(e.target.value); setPosGoods(''); setSubGoods('');}}
-            required
+            style={{ margin:"1rem 1rem 1rem 8rem"}}
           >
             <option value="">Selecione um tipo de jogo</option>
             {state.tipoJogo.map((tipo, index) => (
@@ -427,6 +560,7 @@ export const AddHeroiForm: React.FC = () => {
             <select
               value={mapaGoods?.nome}
               onChange={(e) => setMapaGoods(state.mapas.find((mapa) => mapa.nome == e.target.value))}
+              style={{ margin:"1rem 1rem 1rem 1rem"}}
               required
             >
               <option value="">Selecione um mapa</option>
@@ -438,13 +572,14 @@ export const AddHeroiForm: React.FC = () => {
             </select>
           }
           {mapaGoods &&
-            <div>
+            <>
               {
-                mapaGoods.nome == "Domination" ?
+                mapaGoods.tipo == "Domination" ?
                 (
                   <select
                     value={subGoods}
                     onChange={(e) => setSubGoods(e.target.value)}
+                    style={{ margin:"1rem 1rem 1rem 1rem"}}
                     required
                   >
                     <option value="">Selecione um submapa</option>
@@ -461,6 +596,7 @@ export const AddHeroiForm: React.FC = () => {
                   <select
                     value={posGoods}
                     onChange={(e) => setPosGoods(e.target.value)}
+                    style={{ margin:"1rem 1rem 1rem 1rem"}}
                     required
                   >
                     <option value="">Selecione uma posição</option>
@@ -473,109 +609,127 @@ export const AddHeroiForm: React.FC = () => {
                   </select>
                 )
               }
-            </div>
+            </>
           }
-          <div>
-            <h5>Bons Aliados</h5>
-            <FilterInput
-              type="text"
-              value={aliadoPGoodsFilter}
-              onChange={(e) => setAliadoPGoodsFilter(e.target.value)}
-              placeholder="Hero"
-            />
-            <SelectMulti
-              multiple
-              value={aliadoPGoods.map((ali) => ali.nome)}
-              onChange={handleGoodAllySelect}
-            >
-              {filteredGoodAllys.map((heroi) => (
-                <option key={heroi.nome} value={heroi.nome}>
-                  {heroi.nome}
-                </option>
-              ))}
-            </SelectMulti>
-            <SelectedItemsContainer>
-              {aliadoPGoods.map((heroi) => (
-                <SelectedItem key={heroi.nome}>
-                  {heroi.nome}
-                  <RemoveButton type="button" onClick={() => removeGoodAlly(heroi)}>
-                    X
-                  </RemoveButton>
-                </SelectedItem>
-              ))}
-            </SelectedItemsContainer>
+          <div style={{display:"flex", flexDirection:"row", justifyContent:"space-evenly"}}>
+            <div style={{minWidth: "20rem"}}>
+              <h5>Bons Aliados</h5>
+              <FilterInput
+                type="text"
+                value={aliadoPGoodsFilter}
+                onChange={(e) => setAliadoPGoodsFilter(e.target.value)}
+                placeholder="Hero"
+              />
+              <SelectMulti
+                multiple
+                value={aliadoPGoods.map((ali) => ali.nome)}
+                onChange={handleGoodAllySelect}
+              >
+                {filteredGoodAllys.map((heroi) => (
+                  <option key={heroi.nome} value={heroi.nome}>
+                    {heroi.nome}
+                  </option>
+                ))}
+              </SelectMulti>
+              <SelectedItemsContainer>
+                {aliadoPGoods.map((heroi) => (
+                  <SelectedItem key={heroi.nome}>
+                    {heroi.nome}
+                    <RemoveButton type="button" onClick={() => removeGoodAlly(heroi)}>
+                      X
+                    </RemoveButton>
+                  </SelectedItem>
+                ))}
+              </SelectedItemsContainer>
+            </div>
+          
+            <div style={{minWidth: "20rem"}}>
+              <h5>Aliados Obrigatórios</h5>
+              <FilterInput
+                type="text"
+                value={aliadoOGoodsFilter}
+                onChange={(e) => setAliadoOGoodsFilter(e.target.value)}
+                placeholder="Hero"
+              />
+              <SelectMulti
+                multiple
+                value={aliadoOGoods.map((ali) => ali.nome)}
+                onChange={handleObrigatorAllySelect}
+              >
+                {filteredObrigatorAllys.map((heroi) => (
+                  <option key={heroi.nome} value={heroi.nome}>
+                    {heroi.nome}
+                  </option>
+                ))}
+              </SelectMulti>
+              <SelectedItemsContainer>
+                {aliadoOGoods.map((heroi) => (
+                  <SelectedItem key={heroi.nome}>
+                    {heroi.nome}
+                    <RemoveButton type="button" onClick={() => removeObrigatorAlly(heroi)}>
+                      X
+                    </RemoveButton>
+                  </SelectedItem>
+                ))}
+              </SelectedItemsContainer>
+            </div>
+            <div style={{minWidth: "20rem"}}>
+              <h5>Counter específico de</h5>
+              <FilterInput
+                type="text"
+                value={counterGoodsFilter}
+                onChange={(e) => setCounterGoodsFilter(e.target.value)}
+                placeholder="Hero"
+              />
+              <SelectMulti
+                multiple
+                value={counterGoods.map((ali) => ali.nome)}
+                onChange={handleGoodCounterSelect}
+              >
+                {filteredSpecCounter.map((heroi) => (
+                  <option key={heroi.nome} value={heroi.nome}>
+                    {heroi.nome}
+                  </option>
+                ))}
+              </SelectMulti>
+              <SelectedItemsContainer>
+                {counterGoods.map((heroi) => (
+                  <SelectedItem key={heroi.nome}>
+                    {heroi.nome}
+                    <RemoveButton type="button" onClick={() => removeSpecfCounter(heroi)}>
+                      X
+                    </RemoveButton>
+                  </SelectedItem>
+                ))}
+              </SelectedItemsContainer>
+            </div>
           </div>
-          <div>
-            <h5>Aliados Obrigatórios</h5>
-            <FilterInput
-              type="text"
-              value={aliadoOGoodsFilter}
-              onChange={(e) => setAliadoOGoodsFilter(e.target.value)}
-              placeholder="Hero"
-            />
-            <SelectMulti
-              multiple
-              value={aliadoOGoods.map((ali) => ali.nome)}
-              onChange={handleObrigatorAllySelect}
-            >
-              {filteredObrigatorAllys.map((heroi) => (
-                <option key={heroi.nome} value={heroi.nome}>
-                  {heroi.nome}
-                </option>
-              ))}
-            </SelectMulti>
-            <SelectedItemsContainer>
-              {aliadoOGoods.map((heroi) => (
-                <SelectedItem key={heroi.nome}>
-                  {heroi.nome}
-                  <RemoveButton type="button" onClick={() => removeObrigatorAlly(heroi)}>
-                    X
-                  </RemoveButton>
-                </SelectedItem>
-              ))}
-            </SelectedItemsContainer>
-          </div>
-          <div>
-            <h5>Counter específico de</h5>
-            <FilterInput
-              type="text"
-              value={counterGoodsFilter}
-              onChange={(e) => setCounterGoodsFilter(e.target.value)}
-              placeholder="Hero"
-            />
-            <SelectMulti
-              multiple
-              value={counterGoods.map((ali) => ali.nome)}
-              onChange={handleGoodCounterSelect}
-            >
-              {filteredSpecCounter.map((heroi) => (
-                <option key={heroi.nome} value={heroi.nome}>
-                  {heroi.nome}
-                </option>
-              ))}
-            </SelectMulti>
-            <SelectedItemsContainer>
-              {counterGoods.map((heroi) => (
-                <SelectedItem key={heroi.nome}>
-                  {heroi.nome}
-                  <RemoveButton type="button" onClick={() => removeSpecfCounter(heroi)}>
-                    X
-                  </RemoveButton>
-                </SelectedItem>
-              ))}
-            </SelectedItemsContainer>
-          </div>
-          <AddButton type="button" onClick={() => handleAddGoodMaps()}>
-            +
-          </AddButton>
+          {editingGoodMap == undefined ?
+            (
+              <AddButton type="button" onClick={() => handleAddGoodMaps()}>
+                +
+              </AddButton>
+            ) :
+            (
+              <>
+                <AddButton type="button" onClick={(e) => handleSubmitGoodMapsEdit(e)}>
+                  ✔
+                </AddButton>
+                <AddButton type="button" onClick={(e) => handleCancelEditGoodMaps(e)}>
+                  X
+                </AddButton>
+              </>
+            )
+          }
+          
+          
       </div>
       <div>
           <h3>Mapas Ruins</h3>
-          {badMaps && 
-            <table>
+          {badMaps.length > 0 && 
+            <GameStatusTable>
               <thead> 
                 <tr>
-                  
                   <th>
                     tipo
                   </th>
@@ -597,13 +751,15 @@ export const AddHeroiForm: React.FC = () => {
                   <th>
                     counterado especifico
                   </th>
-                  
+                  <th>
+                    editar
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  {badMaps.map((gm) => (
-                    <>
+                
+                  {badMaps.map((gm, i) => (
+                    <tr>
                       <td>
                         {gm.tipo}
                       </td>
@@ -615,18 +771,18 @@ export const AddHeroiForm: React.FC = () => {
                           {gm.submapa}
                         </td>
                         :
-                        <td/>                         
+                        <td>---</td>                         
                       }
                       {gm.posicao ?
                         <td>
                           {gm.posicao}
                         </td>
                         :
-                        <td/>  
+                        <td>---</td>  
                       }
                       {gm.aliadoDown ? 
                           <td>
-                            <div style={{overflow:"scroll", maxHeight: "5rem"}}>
+                            <div style={{overflowY:"scroll", maxHeight: "5rem"}}>
                               {gm.aliadoDown.map((al) => (
                                 <p>
                                   {al.nome}
@@ -635,11 +791,11 @@ export const AddHeroiForm: React.FC = () => {
                             </div>
                           </td>
                         :
-                        <td/>  
+                        <td>---</td>  
                       }
                       {gm.aliadoObDown ? 
                           <td>
-                            <div style={{overflow:"scroll", maxHeight: "5rem"}}>
+                            <div style={{overflowY:"scroll", maxHeight: "5rem"}}>
                             {gm.aliadoObDown.map((al) => (
                               <p>
                                 {al.nome}
@@ -648,11 +804,11 @@ export const AddHeroiForm: React.FC = () => {
                             </div>
                           </td>
                         :
-                        <td/>  
+                        <td>---</td>  
                       }
                       {gm.specifCountered ? 
                           <td>
-                            <div style={{overflow:"scroll", maxHeight: "5rem"}}>
+                            <div style={{overflowY:"scroll", maxHeight: "5rem"}}>
 
                             {gm.specifCountered.map((al) => (
                               <p>
@@ -662,18 +818,21 @@ export const AddHeroiForm: React.FC = () => {
                             </div>
                           </td>
                         :
-                        <td/>  
+                        <td>---</td>  
                       }
-                    </>
+                      <td>
+                        <button type="button" onClick={() => handleEditBadMap(i, gm)}>Editar</button>
+                      </td>
+                    </tr>
                   ))}
-                </tr>
+                
               </tbody>
-            </table>
+            </GameStatusTable>
           }
           <select
             value={tipoBad}
             onChange={(e) => {setTipoBad(e.target.value); setPosBad(''); setSubBad(''); }}
-            required
+            style={{ margin:"1rem 1rem 1rem 8rem"}}
           >
             <option value="">Selecione um tipo de jogo</option>
             {state.tipoJogo.map((tipo, index) => (
@@ -686,6 +845,7 @@ export const AddHeroiForm: React.FC = () => {
             <select
               value={mapaBad?.nome}
               onChange={(e) => setMapaBad(state.mapas.find((mapa) => mapa.nome == e.target.value))}
+              style={{ margin:"1rem 1rem 1rem 1rem"}}
               required
             >
               <option value="">Selecione um mapa</option>
@@ -697,13 +857,14 @@ export const AddHeroiForm: React.FC = () => {
             </select>
           }
           {mapaBad &&
-            <div>
+            <>
               {
-                mapaBad.nome == "Domination" ?
+                mapaBad.tipo == "Domination" ?
                 (
                   <select
                     value={subBad}
                     onChange={(e) => setSubBad(e.target.value)}
+                    style={{ margin:"1rem 1rem 1rem 1rem"}}
                     required
                   >
                     <option value="">Selecione um submapa</option>
@@ -720,6 +881,7 @@ export const AddHeroiForm: React.FC = () => {
                   <select
                     value={posBad}
                     onChange={(e) => setPosBad(e.target.value)}
+                    style={{ margin:"1rem 1rem 1rem 1rem"}}
                     required
                   >
                     <option value="">Selecione uma posição</option>
@@ -732,103 +894,127 @@ export const AddHeroiForm: React.FC = () => {
                   </select>
                 )
               }
-            </div>
+            </>
           }
-          <div>
-            <h5>Aliados Ruins</h5>
-            <FilterInput
-              type="text"
-              value={aliadoPBadFilter}
-              onChange={(e) => setAliadoPBadFilter(e.target.value)}
-              placeholder="Hero"
-            />
-            <SelectMulti
-              multiple
-              value={aliadoPBad.map((ali) => ali.nome)}
-              onChange={handleBadAllySelect}
-            >
-              {filteredBadAllys.map((heroi) => (
-                <option key={heroi.nome} value={heroi.nome}>
-                  {heroi.nome}
-                </option>
-              ))}
-            </SelectMulti>
-            <SelectedItemsContainer>
-              {aliadoPBad.map((heroi) => (
-                <SelectedItem key={heroi.nome}>
-                  {heroi.nome}
-                  <RemoveButton type="button" onClick={() => removeBadAlly(heroi)}>
-                    X
-                  </RemoveButton>
-                </SelectedItem>
-              ))}
-            </SelectedItemsContainer>
+          <div style={{display:"flex", flexDirection:"row", justifyContent:"space-evenly"}}>
+            <div style={{minWidth: "20rem"}}>
+              <h5>Aliados Ruins</h5>
+              <FilterInput
+                type="text"
+                value={aliadoPBadFilter}
+                onChange={(e) => setAliadoPBadFilter(e.target.value)}
+                placeholder="Hero"
+              />
+              <SelectMulti
+                multiple
+                value={aliadoPBad.map((ali) => ali.nome)}
+                onChange={handleBadAllySelect}
+              >
+                {filteredBadAllys.map((heroi) => (
+                  <option key={heroi.nome} value={heroi.nome}>
+                    {heroi.nome}
+                  </option>
+                ))}
+              </SelectMulti>
+              <SelectedItemsContainer>
+                {aliadoPBad.map((heroi) => (
+                  <SelectedItem key={heroi.nome}>
+                    {heroi.nome}
+                    <RemoveButton type="button" onClick={() => removeBadAlly(heroi)}>
+                      X
+                    </RemoveButton>
+                  </SelectedItem>
+                ))}
+              </SelectedItemsContainer>
+            </div>
+            <div style={{minWidth: "20rem"}}>
+              <h5>Aliados Obrigatórios</h5>
+              <FilterInput
+                type="text"
+                value={aliadoOBadFilter}
+                onChange={(e) => setAliadoOBadFilter(e.target.value)}
+                placeholder="Hero"
+              />
+              <SelectMulti
+                multiple
+                value={aliadoOBad.map((ali) => ali.nome)}
+                onChange={handleObrigatorBadAllySelect}
+              >
+                {filteredObrigatorBadAllys.map((heroi) => (
+                  <option key={heroi.nome} value={heroi.nome}>
+                    {heroi.nome}
+                  </option>
+                ))}
+              </SelectMulti>
+              <SelectedItemsContainer>
+                {aliadoOBad.map((heroi) => (
+                  <SelectedItem key={heroi.nome}>
+                    {heroi.nome}
+                    <RemoveButton type="button" onClick={() => removeObrigatorBadAlly(heroi)}>
+                      X
+                    </RemoveButton>
+                  </SelectedItem>
+                ))}
+              </SelectedItemsContainer>
+            </div>
+            <div style={{minWidth: "20rem"}}>
+              <h5>Counterado específico por</h5>
+              <FilterInput
+                type="text"
+                value={counteredBadFilter}
+                onChange={(e) => setCounteredBadFilter(e.target.value)}
+                placeholder="Hero"
+              />
+              <SelectMulti
+                multiple
+                value={counteredBad.map((ali) => ali.nome)}
+                onChange={handleBadCounteredSelect}
+              >
+                {filteredSpecCountered.map((heroi) => (
+                  <option key={heroi.nome} value={heroi.nome}>
+                    {heroi.nome}
+                  </option>
+                ))}
+              </SelectMulti>
+              <SelectedItemsContainer>
+                {counteredBad.map((heroi) => (
+                  <SelectedItem key={heroi.nome}>
+                    {heroi.nome}
+                    <RemoveButton type="button" onClick={() => removeSpecfCountered(heroi)}>
+                      X
+                    </RemoveButton>
+                  </SelectedItem>
+                ))}
+              </SelectedItemsContainer>
+            </div>
           </div>
-          <div>
-            <h5>Aliados Obrigatórios</h5>
-            <FilterInput
-              type="text"
-              value={aliadoOBadFilter}
-              onChange={(e) => setAliadoOBadFilter(e.target.value)}
-              placeholder="Hero"
-            />
-            <SelectMulti
-              multiple
-              value={aliadoOBad.map((ali) => ali.nome)}
-              onChange={handleObrigatorBadAllySelect}
-            >
-              {filteredObrigatorBadAllys.map((heroi) => (
-                <option key={heroi.nome} value={heroi.nome}>
-                  {heroi.nome}
-                </option>
-              ))}
-            </SelectMulti>
-            <SelectedItemsContainer>
-              {aliadoOBad.map((heroi) => (
-                <SelectedItem key={heroi.nome}>
-                  {heroi.nome}
-                  <RemoveButton type="button" onClick={() => removeObrigatorBadAlly(heroi)}>
-                    X
-                  </RemoveButton>
-                </SelectedItem>
-              ))}
-            </SelectedItemsContainer>
-          </div>
-          <div>
-            <h5>Counterado específico por</h5>
-            <FilterInput
-              type="text"
-              value={counteredBadFilter}
-              onChange={(e) => setCounteredBadFilter(e.target.value)}
-              placeholder="Hero"
-            />
-            <SelectMulti
-              multiple
-              value={counterBad.map((ali) => ali.nome)}
-              onChange={handleBadCounteredSelect}
-            >
-              {filteredSpecCountered.map((heroi) => (
-                <option key={heroi.nome} value={heroi.nome}>
-                  {heroi.nome}
-                </option>
-              ))}
-            </SelectMulti>
-            <SelectedItemsContainer>
-              {counterBad.map((heroi) => (
-                <SelectedItem key={heroi.nome}>
-                  {heroi.nome}
-                  <RemoveButton type="button" onClick={() => removeSpecfCountered(heroi)}>
-                    X
-                  </RemoveButton>
-                </SelectedItem>
-              ))}
-            </SelectedItemsContainer>
-          </div>
-          <AddButton type="button" onClick={() => handleAddBadMaps()}>
-            +
-          </AddButton>
+          {editingBadMap == undefined ?
+            (
+              <AddButton type="button" onClick={() => handleAddBadMaps()}>
+                +
+              </AddButton>
+            ) :
+            (
+              <>
+                <AddButton type="button" onClick={(e) => handleSubmitBadMapsEdit(e)}>
+                  ✔
+                </AddButton>
+                <AddButton type="button" onClick={(e) => handleCancelEditBadMaps(e)}>
+                  X
+                </AddButton>
+              </>
+            )
+          }
       </div>
-      <button type="submit">Adicionar Herói</button>
+      {heroiToEdit ? (
+        <>  
+          <button style={{ margin:"5rem 5rem 5rem 5rem", background:'#1fff'}} type="submit">Editar Herói</button>
+          <button style={{ margin:"5rem 5rem 5rem 5rem", background:'#f11f'}} onClick={() => {handleCancelEdit()}}>Cancelar edição</button>
+        </>
+      ) : (
+        <button style={{ margin:"5rem 5rem 5rem 5rem", background:'#1fff'}} type="submit">Adicionar Herói</button>
+      )}
+      
     </form>
   );
 };

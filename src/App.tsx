@@ -7,10 +7,17 @@ import { AddFormacaoForm } from './components/AddFormacaoForm';
 import { AddGameModeForm } from './components/AddGameModeForm';
 import { AddMapaForm } from './components/AddMapaForm';
 import { ContextDisplay } from './components/ContextDisplay';
+import { Heroi } from './types/types';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'hero' | 'gameMode' | 'mapa' | 'form'>('hero');
   const { saveToJson, loadFromJson } = useContext(GameContext);
+  const [heroiToEdit, setHeroiToEdit] = useState<Heroi | undefined>(undefined);
+
+  const handleEdit = (heroi: Heroi) => {
+    setHeroiToEdit(heroi); 
+    setActiveTab('hero'); 
+  };
 
   return (
     <Container>
@@ -50,8 +57,8 @@ const App: React.FC = () => {
       <TabContent>
         {activeTab === 'hero' && (
           <>
-            <AddHeroiForm />
-            <HeroiList />
+            <AddHeroiForm heroiToEdit={heroiToEdit} setHeroEdit={setHeroiToEdit}/>
+            <HeroiList onEdit={handleEdit}  />
           </>
         )}
         {activeTab === 'gameMode' && (

@@ -10,7 +10,7 @@ export interface Mapa {
     nome: string;
     classe: Classe;
     counters?: Heroi[];
-    countera?: Heroi[];
+    countered?: Heroi[];
     goodMaps?: GameStatusPlus[];
     badMaps?: GameStatusDown[];
   }
