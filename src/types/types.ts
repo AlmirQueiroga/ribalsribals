@@ -7,18 +7,22 @@ export interface Mapa {
   }
   
   export interface Heroi {
-    nome: string;
-    classe: Classe;
+    id: string;
+    name: string;
+    imageUrl?: string;
+    role: Classe;
+    attack_type?: string;
+    team?: string[];
+    difficulty?: number;
+    playersGrade?: number[];
     counters?: Heroi[];
     countered?: Heroi[];
-    goodMaps?: GameStatusPlus[];
-    badMaps?: GameStatusDown[];
   }
 
   export enum Classe {
-    Tank = 'Tank',
-    DPS = 'DPS',
-    Support = 'Support',
+    Vanguard = 'Vanguard',
+    Duelist = 'Duelist',
+    Strategist = 'Strategist',
   }
 
   export interface GameStatusPlus {
@@ -26,19 +30,8 @@ export interface Mapa {
     mapa: Mapa;
     submapa?: string;
     posicao?: string;
-    aliadoPlus?: Heroi[];
-    aliadoOb?: Heroi[];
-    specifCounter?: Heroi[];
-  }
-  
-  export interface GameStatusDown {
-    tipo: string;
-    mapa: Mapa;
-    submapa?: string;
-    posicao?: string;
-    aliadoDown?: Heroi[];
-    aliadoObDown?: Heroi[];
-    specifCountered?: Heroi[];
+    aliados: Heroi[];
+    inimigos?: Heroi[];
   }
   
   export interface CompList {
